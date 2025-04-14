@@ -174,14 +174,27 @@ colorOptions.forEach((option) => {
   });
 });
 
-// Toggle settings panel via cog icon.
+// Toggle settings panel and change cog icon to "X"
 settingsButton.addEventListener("click", () => {
   if (settingsPanel.style.display === "none" || !settingsPanel.style.display) {
     settingsPanel.style.display = "block";
+    settingsButton.textContent = "✖"; // Change cog to "X"
   } else {
     settingsPanel.style.display = "none";
+    settingsButton.textContent = "⚙"; // Change back to cog
   }
 });
+
+// Hide settings cog during a session
+function hideSettingsButton() {
+  settingsButton.style.display = "none";
+}
+
+// Show settings cog after reset
+function showSettingsButton() {
+  settingsButton.style.display = "block";
+  settingsButton.textContent = "⚙"; // Reset to cog icon
+}
 
 // Main breathing function.
 async function startBreathing(event) {
@@ -193,8 +206,10 @@ async function startBreathing(event) {
   pauseButton.disabled = false;
   resetButton.disabled = false;
   
-  // Hide settings and expand container.
+  // Hide settings and settings cog
   settingsPanel.style.display = "none";
+  hideSettingsButton();
+
   document.body.classList.add("active");
   setAnimationInitialState();
   
@@ -323,6 +338,9 @@ async function startBreathing(event) {
   setAnimationInitialState();
   setPreviewState();
   document.body.classList.remove("active");
+
+  // Show settings cog
+  showSettingsButton();
 }
 
 // Helper to finish animation on reset.
@@ -338,6 +356,9 @@ function finishAnimation() {
   breathDisplay.textContent = `Breaths: ${document.getElementById("breaths").value} • Rounds: ${document.getElementById("rounds").value}`;
   setPreviewState();
   document.body.classList.remove("active");
+
+  // Show settings cog
+  showSettingsButton();
 }
 
 // Pause/Resume event listener.
@@ -357,3 +378,125 @@ document.getElementById("settings-form").addEventListener("submit", startBreathi
 // Initial setup: use preview state.
 setPreviewState();
 updateHexagonColors();
+
+// Function to update the breath display
+function updateBreathDisplay() {
+  const breaths = document.getElementById("breaths").value;
+  const rounds = document.getElementById("rounds").value;
+  const retention = document.getElementById("retention").value;
+  const hold = document.getElementById("hold").value;
+
+  breathDisplay.textContent = `Breaths: ${breaths} • Rounds: ${rounds} • Retention: ${retention}s • Hold: ${hold}s`;
+}
+
+// Function to save settings to localStorage
+function saveSettings(event) {
+  if (event) event.preventDefault(); // Prevent form submission
+
+  const settings = {
+    inhale: document.getElementById("inhale").value,
+    exhale: document.getElementById("exhale").value,
+    retention: document.getElementById("retention").value,
+    hold: document.getElementById("hold").value,
+    breaths: document.getElementById("breaths").value,
+    rounds: document.getElementById("rounds").value,
+    baseColor: baseColor,
+  };
+
+  localStorage.setItem("breathingSettings", JSON.stringify(settings));
+  console.log("Settings saved to localStorage:", settings);
+
+  // Update the breath display
+  updateBreathDisplay();
+}
+
+// Attach the saveSettings function to the form's submit event
+document.getElementById("settings-form").addEventListener("submit", saveSettings);
+
+// Function to load settings from localStorage
+function loadSettings() {
+  const savedSettings = localStorage.getItem("breathingSettings");
+  if (savedSettings) {
+    const settings = JSON.parse(savedSettings);
+    document.getElementById("inhale").value = settings.inhale;
+    document.getElementById("exhale").value = settings.exhale;
+    document.getElementById("retention").value = settings.retention;
+    document.getElementById("hold").value = settings.hold;
+    document.getElementById("breaths").value = settings.breaths;
+    document.getElementById("rounds").value = settings.rounds;
+    baseColor = settings.baseColor;
+
+    // Update the selected color option
+    colorOptions.forEach((option) => {
+      option.classList.remove("selected");
+      if (option.getAttribute("data-color") === baseColor) {
+        option.classList.add("selected");
+      }
+    });
+
+    updateHexagonColors();
+    console.log("Settings loaded from localStorage:", settings);
+
+    // Update the breath display
+    updateBreathDisplay();
+  }
+}
+
+// Load settings on page load
+window.addEventListener("DOMContentLoaded", loadSettings);
+
+// Save settings when the form is submitted
+document.getElementById("settings-form").addEventListener("submit", saveSettings);
+
+// Load settings on page load
+window.addEventListener("DOMContentLoaded", loadSettings);
+
+// Save settings on input change
+document.querySelectorAll("#settings-panel input").forEach((input) => {
+  input.addEventListener("change", saveSettings);
+});
+
+// Default settings
+const defaultSettings = {
+  inhale: "1.8",
+  exhale: "1.8",
+  retention: "90",
+  hold: "15",
+  breaths: "30",
+  rounds: "3",
+  baseColor: "#4AAFF7",
+};
+
+// Function to reset settings to default
+function resetToDefaultSettings() {
+  // Reset form inputs to default values
+  document.getElementById("inhale").value = defaultSettings.inhale;
+  document.getElementById("exhale").value = defaultSettings.exhale;
+  document.getElementById("retention").value = defaultSettings.retention;
+  document.getElementById("hold").value = defaultSettings.hold;
+  document.getElementById("breaths").value = defaultSettings.breaths;
+  document.getElementById("rounds").value = defaultSettings.rounds;
+
+  // Reset base color
+  baseColor = defaultSettings.baseColor;
+  colorOptions.forEach((option) => {
+    option.classList.remove("selected");
+    if (option.getAttribute("data-color") === baseColor) {
+      option.classList.add("selected");
+    }
+  });
+
+  // Update hexagon colors
+  updateHexagonColors();
+
+  // Save the default settings to localStorage
+  localStorage.setItem("breathingSettings", JSON.stringify(defaultSettings));
+
+  // Update the breath display
+  updateBreathDisplay();
+}
+
+// Add event listener to the "Reset to Default" button
+document
+  .getElementById("reset-defaults-button")
+  .addEventListener("click", resetToDefaultSettings);
