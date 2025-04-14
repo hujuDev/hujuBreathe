@@ -6,7 +6,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  /* Remove fixed height */
 }
 body {
   font-family: 'Roboto', sans-serif;
@@ -14,7 +14,12 @@ body {
   background: linear-gradient(135deg, #2c3e50, #4ca1af);
   display: flex;
   justify-content: center;
-  align-items: center;
+  /* Align container to the top */
+  align-items: flex-start; 
+  /* Ensure body takes at least full viewport height but can grow */
+  min-height: 100vh; 
+  /* Add padding for spacing */
+  padding: 20px 0; 
   transition: background 0.5s ease;
 }
 
