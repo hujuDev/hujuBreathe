@@ -1,0 +1,200 @@
+/* Reset and base settings */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  font-family: 'Roboto', sans-serif;
+  /* Deep gradient background */
+  background: linear-gradient(135deg, #2c3e50, #4ca1af);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.5s ease;
+}
+
+/* Main container styling */
+.container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px 25px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Settings cog icon styling */
+.settings-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 10;
+  color: #333;
+}
+
+/* Header styling */
+h1 {
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: #333;
+  position: relative;
+  z-index: 2;
+}
+
+/* Shapes container */
+.shapes {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 20px auto;
+  transition: width 0.5s ease, height 0.5s ease;
+  z-index: 1;
+}
+/* Expanded container when active */
+body.active .shapes {
+  width: 300px;
+  height: 300px;
+}
+
+/* Hexagon shape styling (a hexagon with 43% border-radius) */
+.hexagon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Six-point clip-path defining a hexagon */
+  clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
+  border-radius: 43%;
+  transform-origin: center center;
+  transition: transform 1.8s ease-in-out;
+}
+.hexagon:nth-child(1) { z-index: 1; }
+.hexagon:nth-child(2) { z-index: 2; }
+.hexagon:nth-child(3) { z-index: 3; }
+.hexagon:nth-child(4) { z-index: 4; }
+
+/* Breath counter styling – centered; uses same color as phase text */
+.counter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  font-size: 3rem;
+  font-weight: bold;
+  color: #666;
+  transition: transform 1.8s ease-in-out;
+  z-index: 5;
+}
+
+/* Phase timer styling – positioned just above the buttons */
+.phase-timer {
+  font-size: 1.5rem;
+  color: #666; /* same as breath counter */
+  text-align: center;
+  margin-top: 10px;
+  display: none;
+  z-index: 6;
+}
+
+/* Total breaths & rounds display */
+.breath-display {
+  font-size: 1em;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+/* Status text styling */
+.status {
+  font-size: 1.4em;
+  color: #666; /* same as breath counter */
+  margin-bottom: 20px;
+  min-height: 1.6em;
+  position: relative;
+  z-index: 2;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Settings panel styling */
+#settings-panel {
+  display: none; /* Initially hidden */
+  margin-bottom: 15px;
+}
+.form-group {
+  text-align: left;
+  margin-bottom: 10px;
+}
+label {
+  font-size: 0.9em;
+  color: #333;
+  margin-bottom: 5px;
+  display: block;
+}
+input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  transition: border 0.3s;
+}
+input[type="number"]:focus {
+  outline: none;
+  border-color: #76c7c0;
+}
+
+/* Color picker: colored circles */
+.color-picker {
+  display: flex;
+  gap: 10px;
+}
+.color-option {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.3s;
+}
+.color-option.selected {
+  border-color: #333;
+}
+
+/* Buttons styling */
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 15px;
+}
+button {
+  flex: 1;
+  padding: 10px;
+  font-size: 1em;
+  background-color: #76c7c0;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+button:hover:not(:disabled) {
+  background-color: #5baaa7;
+}
+button:disabled {
+  background-color: #a0c8c4;
+  cursor: not-allowed;
+}
+
