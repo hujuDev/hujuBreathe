@@ -98,8 +98,11 @@ function setAnimationInitialState() {
     hex.style.transform = `scale(${inhaleScales[idx]}) rotate(0deg)`;
   });
   counterEl.style.display = "block";
-  counterEl.style.transition = "";
-  counterEl.style.transform = `translate(-50%, -50%) scale(${inhaleScales[0]})`;
+  counterEl.style.transition = ""; // Reset transition before setting properties
+  // Reset counter transform for inhale/initial state
+  counterEl.style.transform = `translate(-50%, -50%) scale(${inhaleScales[0]})`; // Start at inhale scale
+  // Set initial opacity to 0, ready for fade-in transition
+  counterEl.style.opacity = 0;
   counterEl.textContent = "0";
   phaseTimerEl.style.display = "block";
 }
@@ -274,6 +277,8 @@ async function startBreathing(event) {
   const holdDuration = parseFloat(document.getElementById("hold").value);
   const breaths = parseInt(document.getElementById("breaths").value, 10);
   const rounds = parseInt(document.getElementById("rounds").value, 10);
+  const counterExhaleScale = 0.3; // Define a less extreme exhale scale for the counter
+  const counterInhaleScale = 0.8; // Define a less extreme exhale scale for the counter
   
   breathDisplay.textContent = `Breaths: ${breaths} • Rounds: ${rounds}`;
   updateHexagonColors();
@@ -289,28 +294,31 @@ async function startBreathing(event) {
     }   
     
     counterEl.textContent = "0";
-    statusEl.textContent = `Breathe Out!`;
+    statusEl.textContent = `Breathe Out First!`;
     playSound(exhaleAudio, exhaleDuration, ORIGINAL_EXHALE_DURATION); // Play exhale sound
     hexagons.forEach((hex, idx) => {
       const adjustedExhaleDuration = Math.max(exhaleDuration - exhaleDelays[idx], 0);
       hex.style.transition = `transform ${adjustedExhaleDuration}s ease-in-out ${exhaleDelays[idx]}s`;
       hex.style.transform = `scale(${exhaleScales[idx]}) rotate(-60deg)`;
     });
-    const adjustedCounterExhale = Math.max(exhaleDuration - exhaleDelays[0], 0);
-    counterEl.style.transition = `transform ${adjustedCounterExhale}s ease-in-out ${exhaleDelays[0]}s`;
-    counterEl.style.transform = `translate(-50%, -50%) scale(${exhaleScales[0]})`;
+    // Fade out AND scale down counter during exhale
+    const adjustedCounterExhale = Math.max(exhaleDuration - exhaleDelays[0], 0); // Match timing with largest hexagon
+    counterEl.style.transition = `transform ${adjustedCounterExhale}s ease-in-out ${exhaleDelays[0]}s, opacity ${adjustedCounterExhale}s ease-in-out ${exhaleDelays[0]}s`;
+    counterEl.style.transform = `translate(-50%, -50%) scale(${counterExhaleScale})`; // Scale down
+    counterEl.style.opacity = 0; // Fade out
+
     await Promise.all([delay(exhaleDuration), runPhaseTimer("Exhale", exhaleDuration)]);
     if (isReset) { finishAnimation(); return; }
-    setAnimationInitialState();
-    
-    
+    // setAnimationInitialState will now correctly set opacity to 0 before inhale
+
     // Main breathing cycles for this round.
     for (let i = 1; i <= breaths; i++) {
       if (isReset) break;
-      // Display the current breath (starting at 0 for first round,
-      // so subsequent breaths show 1, 2, …).
+      setAnimationInitialState(); // Reset state (opacity is now set to 0 here)
+      await delay(0.01); // Small delay to ensure reset applies before next transition
+
       counterEl.textContent = `${i}`;
-      
+
       // Inhale phase.
       if (i == breaths) statusEl.textContent = `Final Breath In!`;
       else statusEl.textContent = `Breathe In!`;
@@ -320,13 +328,17 @@ async function startBreathing(event) {
         hex.style.transition = `transform ${adjustedInhaleDuration}s ease-in-out ${inhaleDelays[idx]}s`;
         hex.style.transform = `scale(${inhaleScales[idx]}) rotate(60deg)`;
       });
-      // Delay counter's scaling further on inhale.
-      const adjustedCounterInhale = Math.max(inhaleDuration - inhaleDelays[0] + 0.2, 0);
-      counterEl.style.transition = `transform ${adjustedCounterInhale}s ease-in-out ${inhaleDelays[0] + 0.2}s`;
-      counterEl.style.transform = `translate(-50%, -50%) scale(${inhaleScales[0]})`;
+      // Counter scale matches largest hexagon during inhale
+      const adjustedCounterInhale = Math.max(inhaleDuration - inhaleDelays[0], 0);
+      // Set transition FIRST
+      counterEl.style.transition = `transform ${adjustedCounterInhale}s ease-in ${inhaleDelays[0]}s, opacity ${adjustedCounterInhale}s ease-in ${inhaleDelays[0]}s`;
+      // THEN set target styles to trigger transition
+      counterEl.style.transform = `translate(-50%, -50%) scale(${counterInhaleScale})`; // Scale up
+      counterEl.style.opacity = 1; // Fade In (from 0 set in setAnimationInitialState)
+
       await Promise.all([delay(inhaleDuration), runPhaseTimer("Inhale", inhaleDuration)]);
       if (isReset) break;
-      
+
       // Exhale phase.
       if (i == breaths) statusEl.textContent = `Final Breath Out!`;
       else statusEl.textContent = `Breathe Out!`;
@@ -336,13 +348,16 @@ async function startBreathing(event) {
         hex.style.transition = `transform ${adjustedExhaleDuration}s ease-in-out ${exhaleDelays[idx]}s`;
         hex.style.transform = `scale(${exhaleScales[idx]}) rotate(-60deg)`;
       });
-      const adjustedCounterExhale = Math.max(exhaleDuration - exhaleDelays[0], 0);
-      counterEl.style.transition = `transform ${adjustedCounterExhale}s ease-in-out ${exhaleDelays[0]}s`;
-      counterEl.style.transform = `translate(-50%, -50%) scale(${exhaleScales[0]})`;
+      // Fade out AND scale down counter during exhale
+      // Use the same adjusted duration and delay as the pre-cycle exhale
+      counterEl.style.transition = `transform ${adjustedCounterExhale}s ease-in-out ${exhaleDelays[0]}s, opacity ${adjustedCounterExhale}s ease-in-out ${exhaleDelays[0]}s`;
+      counterEl.style.transform = `translate(-50%, -50%) scale(${counterExhaleScale})`; // Scale down
+      counterEl.style.opacity = 0; // Fade out
+
       await Promise.all([delay(exhaleDuration), runPhaseTimer("Exhale", exhaleDuration)]);
       if (isReset) break;
-      
-      setAnimationInitialState();
+
+      // setAnimationInitialState() called at the start of the next loop iteration
     }
     
     // Retention phase.
@@ -362,16 +377,16 @@ async function startBreathing(event) {
       hex.style.transition = `transform ${adjustedInhaleDuration}s ease-in-out ${inhaleDelays[idx]}s`;
       hex.style.transform = `scale(${inhaleScales[idx]}) rotate(60deg)`;
     });
-    const adjustedCounterInhale = Math.max(inhaleDuration - inhaleDelays[0] + 0.2, 0);
-    counterEl.style.transition = `transform ${adjustedCounterInhale}s ease-in-out ${inhaleDelays[0] + 0.2}s`;
-    counterEl.style.transform = `translate(-50%, -50%) scale(${inhaleScales[0]})`;
+    // Counter remains hidden during this inhale prep for hold
+    counterEl.style.display = 'none';
+
     await Promise.all([delay(inhaleDuration), runPhaseTimer("Inhale", inhaleDuration)]);
     if (isReset) break;
     
     // Hold for an additional configurable duration.
     stopSound(inhaleAudio); // Stop sound before hold starts
     await delay(0.01);
-    setBreathHoldMode();
+    setBreathHoldMode(); // This also hides the counter
     await runPhaseTimer("Hold", holdDuration);
     if (isReset) break;
     
@@ -516,8 +531,8 @@ function loadSettings() {
     // If no saved settings, ensure checkboxes reflect default state (checked)
     backgroundSoundToggle.checked = true;
     breathSoundToggle.checked = true;
-    backgroundVolumeSlider.value = 0.1; // Default volume slider
-    backgroundAudio.volume = 0.1;      // Default audio volume
+    backgroundVolumeSlider.value = 0.05; // Default volume slider
+    backgroundAudio.volume = 0.05;      // Default audio volume
     if (volumeDisplay) volumeDisplay.textContent = "10%"; // Default display
   }
 }
@@ -547,7 +562,7 @@ const defaultSettings = {
   baseColor: "#4AAFF7",
   backgroundSoundEnabled: true, // Default sound setting
   breathSoundEnabled: true,     // Default sound setting
-  backgroundVolume: "0.1" // Default volume as string for consistency
+  backgroundVolume: "0.05" // Default volume as string for consistency
 };
 
 // Function to reset settings to default
