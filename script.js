@@ -171,6 +171,8 @@ colorOptions.forEach((option) => {
     colorOptions.forEach((opt) => opt.classList.remove("selected"));
     option.classList.add("selected");
     updateHexagonColors();
+    // Save the updated color to localStorage
+    saveSettings();
   });
 });
 
