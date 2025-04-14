@@ -90,5 +90,16 @@
     <audio id="exhale-audio" src="exhale.mp3"></audio>
 
     <script src="script.js"></script>
+
+    <!-- SVG Definition for Rounded Hexagon Clip Path -->
+    <svg width="0" height="0" style="position: absolute;">
+      <defs>
+        <clipPath id="rounded-hexagon-clip" clipPathUnits="objectBoundingBox">
+          <!-- Path definition for a hexagon with rounded corners -->
+          <!-- Adjust 'A' radius (e.g., 0.04, 0.04) for more/less rounding -->
+          <path d="M 0.284 0.067 L 0.716 0.067 A 0.05 0.05 0 0 1 0.759 0.091 L 0.975 0.476 A 0.05 0.05 0 0 1 0.975 0.524 L 0.759 0.909 A 0.05 0.05 0 0 1 0.716 0.933 L 0.284 0.933 A 0.05 0.05 0 0 1 0.241 0.909 L 0.025 0.524 A 0.05 0.05 0 0 1 0.025 0.476 L 0.241 0.091 A 0.05 0.05 0 0 1 0.284 0.067 Z" />
+        </clipPath>
+      </defs>
+    </svg>
   </body>
 </html>
