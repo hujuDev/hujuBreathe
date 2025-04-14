@@ -61,6 +61,19 @@
             <label for="rounds">Number of Rounds:</label>
             <input type="number" id="rounds" name="rounds" value="3" min="1" />
           </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="background-sound-toggle" checked /> Enable Background Sound
+            </label>
+            <label for="background-volume">Volume:</label>
+            <input type="range" id="background-volume" name="background-volume" min="0" max="1" step="0.05" value="0.1">
+            <span id="volume-display">10%</span> <!-- Optional: Display current volume -->
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="breath-sound-toggle" checked /> Enable Breath Sounds
+            </label>
+          </div>
           <button type="button" id="reset-defaults-button">Reset to Default</button>
         </div>
         <div class="buttons">
@@ -70,6 +83,12 @@
         </div>
       </form>
     </div>
+
+    <!-- Audio Elements -->
+    <audio id="background-audio" src="background.mp3" loop></audio>
+    <audio id="inhale-audio" src="inhale.mp3"></audio>
+    <audio id="exhale-audio" src="exhale.mp3"></audio>
+
     <script src="script.js"></script>
   </body>
 </html>

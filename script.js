@@ -32,6 +32,19 @@ const breathDisplay = document.getElementById("breath-display");
 const settingsButton = document.getElementById("settings-button");
 const phaseTimerEl = document.getElementById("phase-timer");
 
+// Sound Elements & Controls
+const backgroundAudio = document.getElementById("background-audio");
+const inhaleAudio = document.getElementById("inhale-audio");
+const exhaleAudio = document.getElementById("exhale-audio");
+const backgroundSoundToggle = document.getElementById("background-sound-toggle");
+const breathSoundToggle = document.getElementById("breath-sound-toggle");
+const backgroundVolumeSlider = document.getElementById("background-volume");
+const volumeDisplay = document.getElementById("volume-display"); // Optional display span
+
+// Assumed original duration of the sound files in seconds (adjust if needed)
+const ORIGINAL_INHALE_DURATION = 6;
+const ORIGINAL_EXHALE_DURATION = 6;
+
 // Global base color (default)
 let baseColor = "#4AAFF7";
 
@@ -198,6 +211,32 @@ function showSettingsButton() {
   settingsButton.textContent = "⚙"; // Reset to cog icon
 }
 
+// Set initial background volume
+backgroundAudio.volume = 0.1; // Start at 10% volume
+
+// Function to play sound with adjusted playback rate
+function playSound(audioElement, targetDuration, originalDuration) {
+  if (!audioElement || !breathSoundToggle.checked) return; // Check if sound enabled
+
+  try {
+    const playbackRate = originalDuration / targetDuration;
+    // Clamp playbackRate to avoid extreme values (e.g., 0.5x to 2x speed)
+    audioElement.playbackRate = Math.max(0.5, Math.min(playbackRate, 4));
+    audioElement.currentTime = 0; // Rewind before playing
+    audioElement.play().catch(e => console.error("Audio play failed:", e)); // Play and catch errors
+  } catch (e) {
+    console.error("Error setting playbackRate or playing audio:", e);
+  }
+}
+
+// Function to stop sound
+function stopSound(audioElement) {
+    if (audioElement && !audioElement.paused) {
+        audioElement.pause();
+        audioElement.currentTime = 0; // Rewind
+    }
+}
+
 // Main breathing function.
 async function startBreathing(event) {
   event.preventDefault();
@@ -211,6 +250,12 @@ async function startBreathing(event) {
   // Hide settings and settings cog
   settingsPanel.style.display = "none";
   hideSettingsButton();
+
+  // Start background sound if enabled
+  if (backgroundSoundToggle.checked) {
+    backgroundAudio.volume = parseFloat(backgroundVolumeSlider.value); // Ensure volume is set before playing
+    backgroundAudio.play().catch(e => console.error("Background audio play failed:", e));
+  }
 
   document.body.classList.add("active");
   setAnimationInitialState();
@@ -245,6 +290,7 @@ async function startBreathing(event) {
     
     counterEl.textContent = "0";
     statusEl.textContent = `Breathe Out!`;
+    playSound(exhaleAudio, exhaleDuration, ORIGINAL_EXHALE_DURATION); // Play exhale sound
     hexagons.forEach((hex, idx) => {
       const adjustedExhaleDuration = Math.max(exhaleDuration - exhaleDelays[idx], 0);
       hex.style.transition = `transform ${adjustedExhaleDuration}s ease-in-out ${exhaleDelays[idx]}s`;
@@ -268,6 +314,7 @@ async function startBreathing(event) {
       // Inhale phase.
       if (i == breaths) statusEl.textContent = `Final Breath In!`;
       else statusEl.textContent = `Breathe In!`;
+      playSound(inhaleAudio, inhaleDuration, ORIGINAL_INHALE_DURATION); // Play inhale sound
       hexagons.forEach((hex, idx) => {
         const adjustedInhaleDuration = Math.max(inhaleDuration - inhaleDelays[idx], 0);
         hex.style.transition = `transform ${adjustedInhaleDuration}s ease-in-out ${inhaleDelays[idx]}s`;
@@ -283,6 +330,7 @@ async function startBreathing(event) {
       // Exhale phase.
       if (i == breaths) statusEl.textContent = `Final Breath Out!`;
       else statusEl.textContent = `Breathe Out!`;
+      playSound(exhaleAudio, exhaleDuration, ORIGINAL_EXHALE_DURATION); // Play exhale sound
       hexagons.forEach((hex, idx) => {
         const adjustedExhaleDuration = Math.max(exhaleDuration - exhaleDelays[idx], 0);
         hex.style.transition = `transform ${adjustedExhaleDuration}s ease-in-out ${exhaleDelays[idx]}s`;
@@ -298,6 +346,8 @@ async function startBreathing(event) {
     }
     
     // Retention phase.
+    stopSound(inhaleAudio); // Ensure sounds are stopped before retention/hold
+    stopSound(exhaleAudio);
     setRetentionMode();
     await runPhaseTimer("Retention", retentionDuration);
     if (isReset) break;
@@ -306,6 +356,7 @@ async function startBreathing(event) {
     
     // Animate an extra inhale phase.
     statusEl.textContent = "Big Breath In!";
+    playSound(inhaleAudio, inhaleDuration, ORIGINAL_INHALE_DURATION); // Play inhale sound for hold prep
     hexagons.forEach((hex, idx) => {
       const adjustedInhaleDuration = Math.max(inhaleDuration - inhaleDelays[idx], 0);
       hex.style.transition = `transform ${adjustedInhaleDuration}s ease-in-out ${inhaleDelays[idx]}s`;
@@ -318,6 +369,7 @@ async function startBreathing(event) {
     if (isReset) break;
     
     // Hold for an additional configurable duration.
+    stopSound(inhaleAudio); // Stop sound before hold starts
     await delay(0.01);
     setBreathHoldMode();
     await runPhaseTimer("Hold", holdDuration);
@@ -329,33 +381,26 @@ async function startBreathing(event) {
   }
   
   // Final state.
+  finishAnimation(); // Use finishAnimation to handle cleanup
+}
+
+// Helper to finish animation on reset or completion.
+function finishAnimation() {
   statusEl.textContent = isReset ? "" : "Done!";
   startButton.disabled = false;
   pauseButton.disabled = true;
   resetButton.disabled = true;
-  isReset = false;
-  isPaused = false;
-  pauseButton.textContent = "Pause";
-  
-  setAnimationInitialState();
-  setPreviewState();
-  document.body.classList.remove("active");
 
-  // Show settings cog
-  showSettingsButton();
-}
+  // Stop all sounds
+  stopSound(backgroundAudio);
+  stopSound(inhaleAudio);
+  stopSound(exhaleAudio);
 
-// Helper to finish animation on reset.
-function finishAnimation() {
-  statusEl.textContent = "";
-  startButton.disabled = false;
-  pauseButton.disabled = true;
-  resetButton.disabled = true;
   isReset = false;
   isPaused = false;
   pauseButton.textContent = "Pause";
   // Reset breath display from settings.
-  breathDisplay.textContent = `Breaths: ${document.getElementById("breaths").value} • Rounds: ${document.getElementById("rounds").value}`;
+  updateBreathDisplay(); // Use existing function
   setPreviewState();
   document.body.classList.remove("active");
 
@@ -367,11 +412,25 @@ function finishAnimation() {
 pauseButton.addEventListener("click", () => {
   isPaused = !isPaused;
   pauseButton.textContent = isPaused ? "Resume" : "Pause";
+
+  // Pause/Resume background sound
+  if (backgroundSoundToggle.checked) {
+      if (isPaused && !backgroundAudio.paused) {
+          backgroundAudio.pause();
+      } else if (!isPaused && backgroundAudio.paused) {
+          // Ensure volume is correct before resuming
+          backgroundAudio.volume = parseFloat(backgroundVolumeSlider.value);
+          backgroundAudio.play().catch(e => console.error("Background audio resume failed:", e));
+      }
+  }
+  // Note: Pausing/resuming stretched breath sounds perfectly is complex.
+  // This implementation lets them finish or stops them on reset/phase change.
 });
 
 // Reset event listener.
 resetButton.addEventListener("click", () => {
   isReset = true;
+  // finishAnimation() will handle stopping sounds
 });
 
 // Start button (form submission) listener.
@@ -403,6 +462,9 @@ function saveSettings(event) {
     breaths: document.getElementById("breaths").value,
     rounds: document.getElementById("rounds").value,
     baseColor: baseColor,
+    backgroundSoundEnabled: backgroundSoundToggle.checked, // Save sound setting
+    breathSoundEnabled: breathSoundToggle.checked,       // Save sound setting
+    backgroundVolume: backgroundVolumeSlider.value // Save volume setting
   };
 
   localStorage.setItem("breathingSettings", JSON.stringify(settings));
@@ -428,6 +490,15 @@ function loadSettings() {
     document.getElementById("rounds").value = settings.rounds;
     baseColor = settings.baseColor;
 
+    // Load sound settings (handle undefined for older saves)
+    backgroundSoundToggle.checked = settings.backgroundSoundEnabled !== undefined ? settings.backgroundSoundEnabled : true;
+    breathSoundToggle.checked = settings.breathSoundEnabled !== undefined ? settings.breathSoundEnabled : true;
+    // Load volume setting (handle undefined/default)
+    const savedVolume = settings.backgroundVolume !== undefined ? parseFloat(settings.backgroundVolume) : 0.1;
+    backgroundVolumeSlider.value = savedVolume;
+    backgroundAudio.volume = savedVolume; // Apply loaded volume
+    if (volumeDisplay) volumeDisplay.textContent = `${Math.round(savedVolume * 100)}%`; // Update display
+
     // Update the selected color option
     colorOptions.forEach((option) => {
       option.classList.remove("selected");
@@ -441,6 +512,13 @@ function loadSettings() {
 
     // Update the breath display
     updateBreathDisplay();
+  } else {
+    // If no saved settings, ensure checkboxes reflect default state (checked)
+    backgroundSoundToggle.checked = true;
+    breathSoundToggle.checked = true;
+    backgroundVolumeSlider.value = 0.1; // Default volume slider
+    backgroundAudio.volume = 0.1;      // Default audio volume
+    if (volumeDisplay) volumeDisplay.textContent = "10%"; // Default display
   }
 }
 
@@ -467,6 +545,9 @@ const defaultSettings = {
   breaths: "30",
   rounds: "3",
   baseColor: "#4AAFF7",
+  backgroundSoundEnabled: true, // Default sound setting
+  breathSoundEnabled: true,     // Default sound setting
+  backgroundVolume: "0.1" // Default volume as string for consistency
 };
 
 // Function to reset settings to default
@@ -478,6 +559,14 @@ function resetToDefaultSettings() {
   document.getElementById("hold").value = defaultSettings.hold;
   document.getElementById("breaths").value = defaultSettings.breaths;
   document.getElementById("rounds").value = defaultSettings.rounds;
+
+  // Reset sound toggles
+  backgroundSoundToggle.checked = defaultSettings.backgroundSoundEnabled;
+  breathSoundToggle.checked = defaultSettings.breathSoundEnabled;
+  const defaultVolume = parseFloat(defaultSettings.backgroundVolume);
+  backgroundVolumeSlider.value = defaultVolume;
+  backgroundAudio.volume = defaultVolume; // Apply default volume
+  if (volumeDisplay) volumeDisplay.textContent = `${Math.round(defaultVolume * 100)}%`; // Update display
 
   // Reset base color
   baseColor = defaultSettings.baseColor;
@@ -502,3 +591,30 @@ function resetToDefaultSettings() {
 document
   .getElementById("reset-defaults-button")
   .addEventListener("click", resetToDefaultSettings);
+
+// Add event listeners for sound toggles to save settings immediately
+backgroundSoundToggle.addEventListener("change", saveSettings);
+breathSoundToggle.addEventListener("change", saveSettings);
+
+// Add event listener for the volume slider
+backgroundVolumeSlider.addEventListener("input", () => {
+  const newVolume = parseFloat(backgroundVolumeSlider.value);
+  backgroundAudio.volume = newVolume;
+  if (volumeDisplay) volumeDisplay.textContent = `${Math.round(newVolume * 100)}%`; // Update display
+  // Save setting immediately on change
+  saveSettings();
+});
+
+// Initial setup
+loadSettings(); // Load settings first
+setPreviewState();
+updateHexagonColors(); // Update colors based on loaded/default settings
+updateBreathDisplay(); // Update display based on loaded/default settings
+
+// Attach saveSettings to other inputs as before
+document.querySelectorAll("#settings-panel input[type='number']").forEach((input) => {
+    input.addEventListener("change", saveSettings);
+});
+// Remove duplicate event listeners if any
+// document.getElementById("settings-form").removeEventListener("submit", saveSettings); // Might remove if added multiple times
+document.getElementById("settings-form").addEventListener("submit", startBreathing); // Ensure startBreathing is the submit handler
